@@ -1,7 +1,7 @@
 {
-  "name": "Daily Discipline",
-  "short_name": "Routine",
-  "start_url": "index.html",
+  "name": "Daily Discipline System",
+  "short_name": "Discipline",
+  "start_url": "/routineapp/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
