@@ -1,107 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Daily Routine Pro</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Routine App</title>
+
 <style>
-  body{font-family:Arial;background:#020617;color:white;text-align:center;padding:15px}
-  h1{margin-bottom:5px}
-  .task{background:#0f172a;margin:10px;padding:15px;border-radius:14px}
-  .done{background:#065f46 !important}
-  button{margin-top:10px;background:#22c55e;border:none;padding:10px 15px;border-radius:10px;color:white;font-weight:bold}
-  .miss{background:#7f1d1d !important}
-  .streak{margin-top:15px;font-size:18px;color:#facc15}
+body{
+  font-family: Arial, sans-serif;
+  background:#111;
+  color:white;
+  text-align:center;
+  padding:20px;
+}
+
+h1{
+  color:#00ffcc;
+}
+
+button{
+  cursor:pointer;
+}
+.card{
+  background:#222;
+  padding:15px;
+  margin:10px 0;
+  border-radius:10px;
+}
 </style>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#020617">
-<link rel="icon" href="icon.png">
+
 </head>
 <body>
-<h1>🔥 Daily Discipline System</h1>
-<p>Keep open in background — it will push you to work</p>
-<button onclick="enableNotifications()">Enable Alerts</button>
-<div class="streak" id="streak"></div>
-<div id="tasks"></div>
+
+<h1>🔥 My Daily Routine</h1>
+
+<h3>🔥 Streak: <span id="streak">0</span></h3>
+
+<div id="routineList"></div>
 
 <script>
+
+// ================= ROUTINE LIST =================
 const routine = [
-  {name:'Wake Up', time:'06:00', repeat:10},
-  {name:'Trading (2 Hours)', time:'06:15', repeat:15},
-  {name:'Online Business', time:'09:00', repeat:10},
-  {name:'Facebook Page', time:'11:00', repeat:10},
-  {name:'Binance P2P', time:'13:00', repeat:10}
+  {name:'Wake Up', time:'06:00'},
+  {name:'Trading (2 Hours)', time:'06:15'},
+  {name:'Online Business', time:'09:00'},
+  {name:'Facebook Page', time:'11:00'},
+  {name:'Binance P2P', time:'13:00'}
 ];
 
+// ================= LOAD DATA =================
 let state = JSON.parse(localStorage.getItem('routineState')) || {};
 let streak = Number(localStorage.getItem('streak')) || 0;
 
+// ================= DAILY RESET =================
+function dailyReset(){
+  const now = new Date();
+  const lastReset = localStorage.getItem("lastReset");
+  const today = now.toDateString();
+
+  if(lastReset !== today && now.getHours() >= 5){
+    state = {};
+    localStorage.setItem("routineState", JSON.stringify(state));
+    localStorage.setItem("lastReset", today);
+  }
+}
+
+dailyReset();
+
+// ================= SAVE =================
 function save(){
   localStorage.setItem('routineState', JSON.stringify(state));
   localStorage.setItem('streak', streak);
 }
 
-function enableNotifications(){
-  if(Notification.permission!=='granted') Notification.requestPermission();
+// ================= ALERT =================
+function showAlert(msg){
+  alert(msg);
 }
 
-function motivate(){
-  const lines=[
-    'Start now. Your future depends on today.',
-    'No discipline = no success.',
-    'Winners work even when lazy.',
-    'Money comes from consistency.',
-    'Do it NOW not later.'
-  ];
-  return lines[Math.floor(Math.random()*lines.length)];
-}
-
-function showAlert(task){
-  if(Notification.permission==='granted'){
-    new Notification('⏰ '+task.name,{body:motivate()});
-  }
-  alert(task.name+'\n'+motivate());
-}
-
-function markDone(name,el){
-  state[name]='done';
-  el.parentElement.classList.add('done');
+// ================= MARK DONE =================
+function markDone(name){
+  state[name] = true;
   save();
+  render();
   checkAllDone();
 }
 
+// ================= CHECK ALL DONE =================
 function checkAllDone(){
-  if(Object.keys(state).length===routine.length && Object.values(state).every(v=>v==='done')){
+  const allDone = routine.every(r => state[r.name]);
+  if(allDone){
     streak++;
-    alert('🔥 Perfect Day! Streak: '+streak);
-    state={};
     save();
-    location.reload();
+    showAlert("🔥 Great Job! Streak Increased!");
   }
 }
 
+// ================= CHECK MISSED =================
 function checkMissed(){
-  const now=new Date();
-  const current=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-  routine.forEach(task=>{
-    if(current>task.time && !state[task.name]){
-      const el=document.getElementById(task.name);
-      if(el) el.classList.add('miss');
+  const now = new Date();
+  const current = now.getHours().toString().padStart(2,'0') + ":" +
+                  now.getMinutes().toString().padStart(2,'0');
+
+  routine.forEach(r => {
+    if(current > r.time && !state[r.name]){
+      showAlert("⚠️ You missed: " + r.name);
     }
   });
 }
 
+// ================= TIME CHECK =================
 function checkTime(){
-  const now=new Date();
-  const current=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-  routine.forEach(task=>{
-    if(current===task.time && !state[task.name]){
-      let count=0;
-      const interval=setInterval(()=>{
-        showAlert(task);
-        count++;
-        if(count>=task.repeat || state[task.name]==='done') clearInterval(interval);
-      },45000);
+  const now = new Date();
+  const current = now.getHours().toString().padStart(2,'0') + ":" +
+                  now.getMinutes().toString().padStart(2,'0');
+
+  routine.forEach(r => {
+    if(current === r.time){
+      showAlert("⏰ Time for: " + r.name);
     }
   });
 }
@@ -109,26 +126,39 @@ function checkTime(){
 setInterval(checkTime,60000);
 setInterval(checkMissed,60000);
 
-document.getElementById('streak').innerText='Current Streak: '+streak+' days';
+// ================= RENDER =================
+function render(){
+  const container = document.getElementById("routineList");
+  container.innerHTML = "";
 
-const container=document.getElementById('tasks');
-routine.forEach(t=>{
-  const div=document.createElement('div');
-  div.className='task';
-  div.id=t.name;
-  if(state[t.name]==='done') div.classList.add('done');
-  div.innerHTML = `<b>${t.name}</b><br>Start ${t.time}<br><button onclick="markDone('${t.name}',this)">Done</button>`;
-  container.appendChild(div);
-});
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js')
-    .then(() => console.log("Service Worker Registered"));
+  routine.forEach(r => {
+    const div = document.createElement("div");
+    div.className="card";
+
+    const done = state[r.name];
+
+    div.innerHTML = `
+      <b>${r.name}</b> (${r.time}) <br><br>
+      <button onclick="markDone('${r.name}')"
+        style="background:${done?'green':'gray'};
+        color:white;border:none;padding:8px 15px;border-radius:5px;">
+        ${done?'Done':'Mark Done'}
+      </button>
+    `;
+
+    container.appendChild(div);
+  });
+
+  document.getElementById("streak").innerText = streak;
 }
-</script>
-</body>
 
+render();
+
+</script>
+
+</body>
 </html>
+
+
 
 
