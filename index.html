@@ -64,14 +64,28 @@ function renderTasks() {
   let list = document.getElementById("taskList");
   list.innerHTML = "";
 
+  let today = new Date().toDateString();
+
   tasks.forEach((task, index) => {
+
+    // Daily reset
+    if (task.lastCompletedDate !== today) {
+      task.completed = false;
+    }
+
     list.innerHTML += `
-      <div class="task">
-        <b>${task.name}</b> - ${task.time}
+      <div class="task" style="background:${task.completed ? '#003300' : '#111'}">
+        <b style="text-decoration:${task.completed ? 'line-through' : 'none'}">
+          ${task.name}
+        </b> - ${task.time}
+        <br>
+        <button onclick="completeTask(${index})">✅</button>
         <button onclick="deleteTask(${index})">❌</button>
       </div>
     `;
   });
+
+  saveTasks();
 }
 
 function addTask() {
@@ -83,7 +97,14 @@ function addTask() {
     return;
   }
 
-  tasks.push({ name, time, lastNotified: null });
+  tasks.push({
+    name,
+    time,
+    completed: false,
+    lastCompletedDate: null,
+    lastNotified: null
+  });
+
   saveTasks();
   renderTasks();
 
@@ -97,14 +118,19 @@ function deleteTask(index) {
   renderTasks();
 }
 
+function completeTask(index) {
+  let today = new Date().toDateString();
+  tasks[index].completed = true;
+  tasks[index].lastCompletedDate = today;
+  saveTasks();
+  renderTasks();
+}
+
 function showReminder(task) {
   navigator.serviceWorker.ready.then(reg => {
     reg.showNotification("🔔 " + task.name, {
       body: "Time to complete your task!",
-      icon: "icon.png",
-      actions: [
-        { action: "snooze", title: "Snooze 5 min" }
-      ]
+      icon: "icon.png"
     });
   });
 }
@@ -115,7 +141,11 @@ function checkReminder() {
   let today = now.toDateString();
 
   tasks.forEach(task => {
-    if (task.time === currentTime && task.lastNotified !== today) {
+    if (
+      task.time === currentTime &&
+      task.lastNotified !== today &&
+      !task.completed
+    ) {
       if (Notification.permission === "granted") {
         showReminder(task);
         task.lastNotified = today;
@@ -132,6 +162,7 @@ renderTasks();
 
 </body>
 </html>
+
 
 
 
