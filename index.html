@@ -83,7 +83,7 @@ function addTask() {
     return;
   }
 
-  tasks.push({ name, time });
+  tasks.push({ name, time, lastNotified: null });
   saveTasks();
   renderTasks();
 
@@ -97,31 +97,42 @@ function deleteTask(index) {
   renderTasks();
 }
 
+function showReminder(task) {
+  navigator.serviceWorker.ready.then(reg => {
+    reg.showNotification("🔔 " + task.name, {
+      body: "Time to complete your task!",
+      icon: "icon.png",
+      actions: [
+        { action: "snooze", title: "Snooze 5 min" }
+      ]
+    });
+  });
+}
+
 function checkReminder() {
   let now = new Date();
   let currentTime = now.toTimeString().slice(0,5);
+  let today = now.toDateString();
 
   tasks.forEach(task => {
-    if (task.time === currentTime) {
+    if (task.time === currentTime && task.lastNotified !== today) {
       if (Notification.permission === "granted") {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification("🔔 " + task.name, {
-            body: "Time to complete your task!",
-            icon: "icon.png"
-          });
-        });
+        showReminder(task);
+        task.lastNotified = today;
+        saveTasks();
       }
     }
   });
 }
 
-setInterval(checkReminder, 60000); // check every 1 min
+setInterval(checkReminder, 60000);
 
 renderTasks();
 </script>
 
 </body>
 </html>
+
 
 
 
