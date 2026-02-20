@@ -54,6 +54,10 @@ const routine = [
   {name:'Binance P2P', time:'13:00'}
 ];
 
+<button onclick="requestPermission()">Enable Notification</button>
+
+<button onclick="sendNotification()">Test Notification</button>
+
 // ================= LOAD DATA =================
 let state = JSON.parse(localStorage.getItem('routineState')) || {};
 let streak = Number(localStorage.getItem('streak')) || 0;
@@ -182,8 +186,36 @@ render();
 
 </script>
 
+<script>
+  // Service Worker Register
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js")
+      .then(() => console.log("Service Worker Registered"));
+  }
+
+  // Notification Permission
+  function requestPermission() {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        alert("Notification Permission Granted!");
+      }
+    });
+  }
+
+  // Send Test Notification
+  function sendNotification() {
+    navigator.serviceWorker.ready.then(registration => {
+      registration.showNotification("Daily Routine Reminder 🔔", {
+        body: "Time to complete your task!",
+        icon: "icon.png"
+      });
+    });
+  }
+</script>
+
 </body>
 </html>
+
 
 
 
