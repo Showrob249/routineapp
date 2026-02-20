@@ -1,23 +1,16 @@
-const CACHE_NAME = "routine-app-v1";
-
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll([
-        "./",
-        "index.html",
-        "manifest.json",
-        "icon.png"
-      ]);
-    })
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener("fetch", event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
-    })
-  );
+self.addEventListener("notificationclick", function(event) {
+  if (event.action === "snooze") {
+    event.waitUntil(
+      new Promise(resolve => {
+        setTimeout(() => {
+          self.registration.showNotification("⏰ Snoozed Reminder", {
+            body: "Don't forget your task!",
+            icon: "icon.png"
+          });
+          resolve();
+        }, 5 * 60 * 1000);
+      })
+    );
+  }
+  event.notification.close();
 });
