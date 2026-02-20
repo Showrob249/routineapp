@@ -58,6 +58,27 @@ const routine = [
 let state = JSON.parse(localStorage.getItem('routineState')) || {};
 let streak = Number(localStorage.getItem('streak')) || 0;
 
+// ================= ENABLE NOTIFICATION =================
+function enableNotifications(){
+  if("Notification" in window){
+    Notification.requestPermission().then(permission=>{
+      if(permission==="granted"){
+        alert("Notification Enabled ✅");
+      }
+    });
+  }
+}
+
+// ================= SHOW REAL NOTIFICATION =================
+function showNotification(title){
+  if(Notification.permission==="granted"){
+    new Notification(title,{
+      body:"Routine Reminder 🔥",
+      icon:"icon.png"
+    });
+  }
+}
+
 // ================= DAILY RESET =================
 function dailyReset(){
   const now = new Date();
@@ -110,7 +131,7 @@ function checkMissed(){
 
   routine.forEach(r => {
     if(current > r.time && !state[r.name]){
-      showAlert("⚠️ You missed: " + r.name);
+      showNotification("⚠️ You missed: " + r.name);
     }
   });
 }
@@ -123,7 +144,7 @@ function checkTime(){
 
   routine.forEach(r => {
     if(current === r.time){
-      showAlert("⏰ Time for: " + r.name);
+      showNotification("⏰ Time for: " + r.name);
     }
   });
 }
@@ -163,6 +184,7 @@ render();
 
 </body>
 </html>
+
 
 
 
