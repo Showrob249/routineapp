@@ -1,82 +1,128 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Daily Routine App</title>
+  <title>My Daily Routine</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link rel="manifest" href="/routineapp/manifest.json">
-
+  <link rel="manifest" href="manifest.json">
   <style>
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #000;
-      color: white;
+      background: black;
+      color: #00ffe0;
       text-align: center;
-      padding-top: 100px;
+      font-family: Arial;
+      padding: 20px;
     }
-
-    h1 {
-      color: #00ffd5;
-    }
-
-    button {
-      padding: 12px 20px;
-      margin: 10px;
-      border: none;
+    input, button {
+      padding: 10px;
+      margin: 5px;
       border-radius: 8px;
-      background: #00ffd5;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
+      border: none;
     }
-
-    button:hover {
-      opacity: 0.8;
+    button {
+      background: #00ffe0;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .task {
+      background: #111;
+      margin: 10px;
+      padding: 10px;
+      border-radius: 10px;
     }
   </style>
 </head>
 <body>
 
-  <h1>🔥 My Daily Routine</h1>
+<h1>🔥 My Daily Routine</h1>
 
-  <button onclick="enableNotification()">Enable Notifications</button>
-  <button onclick="sendNotification()">Test Notification</button>
+<button onclick="enableNotification()">Enable Notifications</button>
 
-  <script>
-    // Register Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/routineapp/sw.js')
-        .then(() => console.log("Service Worker Registered"));
-    }
+<h2>Add Task</h2>
+<input type="text" id="taskName" placeholder="Task Name">
+<input type="time" id="taskTime">
+<button onclick="addTask()">Add</button>
 
-    function enableNotification() {
-      Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-          alert("Notification Enabled ✅");
-        } else {
-          alert("Permission Denied ❌");
-        }
-      });
-    }
+<h2>Today's Schedule</h2>
+<div id="taskList"></div>
 
-    function sendNotification() {
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
+function enableNotification() {
+  Notification.requestPermission();
+}
+
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+function saveTasks() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function renderTasks() {
+  let list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  tasks.forEach((task, index) => {
+    list.innerHTML += `
+      <div class="task">
+        <b>${task.name}</b> - ${task.time}
+        <button onclick="deleteTask(${index})">❌</button>
+      </div>
+    `;
+  });
+}
+
+function addTask() {
+  let name = document.getElementById("taskName").value;
+  let time = document.getElementById("taskTime").value;
+
+  if (!name || !time) {
+    alert("Enter task & time");
+    return;
+  }
+
+  tasks.push({ name, time });
+  saveTasks();
+  renderTasks();
+
+  document.getElementById("taskName").value = "";
+  document.getElementById("taskTime").value = "";
+}
+
+function deleteTask(index) {
+  tasks.splice(index, 1);
+  saveTasks();
+  renderTasks();
+}
+
+function checkReminder() {
+  let now = new Date();
+  let currentTime = now.toTimeString().slice(0,5);
+
+  tasks.forEach(task => {
+    if (task.time === currentTime) {
       if (Notification.permission === "granted") {
         navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification("Daily Routine Reminder 🔔", {
+          reg.showNotification("🔔 " + task.name, {
             body: "Time to complete your task!",
-            icon: "/routineapp/icon.png"
+            icon: "icon.png"
           });
         });
-      } else {
-        alert("Please enable notification first");
       }
     }
-  </script>
+  });
+}
+
+setInterval(checkReminder, 60000); // check every 1 min
+
+renderTasks();
+</script>
 
 </body>
 </html>
+
 
 
 
