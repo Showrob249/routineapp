@@ -187,13 +187,11 @@ render();
 </script>
 
 <script>
-  // Service Worker Register
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js")
+    navigator.serviceWorker.register("/routineapp/sw.js")
       .then(() => console.log("Service Worker Registered"));
   }
 
-  // Notification Permission
   function requestPermission() {
     Notification.requestPermission().then(permission => {
       if (permission === "granted") {
@@ -202,12 +200,11 @@ render();
     });
   }
 
-  // Send Test Notification
   function sendNotification() {
     navigator.serviceWorker.ready.then(registration => {
       registration.showNotification("Daily Routine Reminder 🔔", {
         body: "Time to complete your task!",
-        icon: "icon.png"
+        icon: "/routineapp/icon.png"
       });
     });
   }
@@ -215,6 +212,7 @@ render();
 
 </body>
 </html>
+
 
 
 
