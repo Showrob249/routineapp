@@ -37,6 +37,19 @@
 
 <button onclick="enableNotification()">Enable Notifications</button>
 
+<h2>Today's Progress</h2>
+
+<div style="width:100%; background:#222; border-radius:20px; overflow:hidden;">
+  <div id="progressBar" style="
+    width:0%;
+    height:20px;
+    background:#00ff88;
+    transition:0.5s;
+  "></div>
+</div>
+
+<p id="progressText">0% Completed</p>
+
 <h2>Add Task</h2>
 <input type="text" id="taskName" placeholder="Task Name">
 <input type="time" id="taskTime">
@@ -65,13 +78,15 @@ function renderTasks() {
   list.innerHTML = "";
 
   let today = new Date().toDateString();
+  let completedCount = 0;
 
   tasks.forEach((task, index) => {
 
-    // Daily reset
     if (task.lastCompletedDate !== today) {
       task.completed = false;
     }
+
+    if (task.completed) completedCount++;
 
     list.innerHTML += `
       <div class="task" style="background:${task.completed ? '#003300' : '#111'}">
@@ -84,6 +99,15 @@ function renderTasks() {
       </div>
     `;
   });
+
+  // 🔥 Progress Calculation
+  let percent = tasks.length === 0
+    ? 0
+    : Math.round((completedCount / tasks.length) * 100);
+
+  document.getElementById("progressBar").style.width = percent + "%";
+  document.getElementById("progressText").innerText =
+    percent + "% Completed (" + completedCount + "/" + tasks.length + ")";
 
   saveTasks();
 }
@@ -162,6 +186,7 @@ renderTasks();
 
 </body>
 </html>
+
 
 
 
