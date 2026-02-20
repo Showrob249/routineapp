@@ -1,214 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Routine App</title>
-<link rel="manifest" href="manifest.json">
-<style>
-body{
-  font-family: Arial, sans-serif;
-  background:#111;
-  color:white;
-  text-align:center;
-  padding:20px;
-}
+  <meta charset="UTF-8">
+  <title>Daily Routine App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-h1{
-  color:#00ffcc;
-}
+  <link rel="manifest" href="/routineapp/manifest.json">
 
-button{
-  cursor:pointer;
-}
-.card{
-  background:#222;
-  padding:15px;
-  margin:10px 0;
-  border-radius:10px;
-}
-</style>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: white;
+      text-align: center;
+      padding-top: 100px;
+    }
 
+    h1 {
+      color: #00ffd5;
+    }
+
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #00ffd5;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.8;
+    }
+  </style>
 </head>
 <body>
 
-<h1>🔥 My Daily Routine</h1>
+  <h1>🔥 My Daily Routine</h1>
 
-<h3>🔥 Streak: <span id="streak">0</span></h3>
+  <button onclick="enableNotification()">Enable Notifications</button>
+  <button onclick="sendNotification()">Test Notification</button>
 
-<button onclick="enableNotifications()" 
-style="padding:8px 15px;border:none;background:#00ffcc;color:black;border-radius:5px;">
-Enable Notifications 🔔
-</button>
-
-<div id="routineList"></div>
-
-<script>
-
-// ================= ROUTINE LIST =================
-const routine = [
-  {name:'Wake Up', time:'06:00'},
-  {name:'Trading (2 Hours)', time:'06:15'},
-  {name:'Online Business', time:'09:00'},
-  {name:'Facebook Page', time:'11:00'},
-  {name:'Binance P2P', time:'13:00'}
-];
-
-<button onclick="requestPermission()">Enable Notification</button>
-
-<button onclick="sendNotification()">Test Notification</button>
-
-// ================= LOAD DATA =================
-let state = JSON.parse(localStorage.getItem('routineState')) || {};
-let streak = Number(localStorage.getItem('streak')) || 0;
-
-// ================= ENABLE NOTIFICATION =================
-function enableNotifications(){
-  if("Notification" in window){
-    Notification.requestPermission().then(permission=>{
-      if(permission==="granted"){
-        alert("Notification Enabled ✅");
-      }
-    });
-  }
-}
-
-// ================= SHOW REAL NOTIFICATION =================
-function showNotification(title){
-  if(Notification.permission==="granted"){
-    new Notification(title,{
-      body:"Routine Reminder 🔥",
-      icon:"icon.png"
-    });
-  }
-}
-
-// ================= DAILY RESET =================
-function dailyReset(){
-  const now = new Date();
-  const lastReset = localStorage.getItem("lastReset");
-  const today = now.toDateString();
-
-  if(lastReset !== today && now.getHours() >= 5){
-    state = {};
-    localStorage.setItem("routineState", JSON.stringify(state));
-    localStorage.setItem("lastReset", today);
-  }
-}
-
-dailyReset();
-
-// ================= SAVE =================
-function save(){
-  localStorage.setItem('routineState', JSON.stringify(state));
-  localStorage.setItem('streak', streak);
-}
-
-// ================= ALERT =================
-function showAlert(msg){
-  alert(msg);
-}
-
-// ================= MARK DONE =================
-function markDone(name){
-  state[name] = true;
-  save();
-  render();
-  checkAllDone();
-}
-
-// ================= CHECK ALL DONE =================
-function checkAllDone(){
-  const allDone = routine.every(r => state[r.name]);
-  if(allDone){
-    streak++;
-    save();
-    showAlert("🔥 Great Job! Streak Increased!");
-  }
-}
-
-// ================= CHECK MISSED =================
-function checkMissed(){
-  const now = new Date();
-  const current = now.getHours().toString().padStart(2,'0') + ":" +
-                  now.getMinutes().toString().padStart(2,'0');
-
-  routine.forEach(r => {
-    if(current > r.time && !state[r.name]){
-      showNotification("⚠️ You missed: " + r.name);
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/routineapp/sw.js')
+        .then(() => console.log("Service Worker Registered"));
     }
-  });
-}
 
-// ================= TIME CHECK =================
-function checkTime(){
-  const now = new Date();
-  const current = now.getHours().toString().padStart(2,'0') + ":" +
-                  now.getMinutes().toString().padStart(2,'0');
-
-  routine.forEach(r => {
-    if(current === r.time){
-      showNotification("⏰ Time for: " + r.name);
-    }
-  });
-}
-
-setInterval(checkTime,60000);
-setInterval(checkMissed,60000);
-
-// ================= RENDER =================
-function render(){
-  const container = document.getElementById("routineList");
-  container.innerHTML = "";
-
-  routine.forEach(r => {
-    const div = document.createElement("div");
-    div.className="card";
-
-    const done = state[r.name];
-
-    div.innerHTML = `
-      <b>${r.name}</b> (${r.time}) <br><br>
-      <button onclick="markDone('${r.name}')"
-        style="background:${done?'green':'gray'};
-        color:white;border:none;padding:8px 15px;border-radius:5px;">
-        ${done?'Done':'Mark Done'}
-      </button>
-    `;
-
-    container.appendChild(div);
-  });
-
-  document.getElementById("streak").innerText = streak;
-}
-
-render();
-
-</script>
-
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/routineapp/sw.js")
-      .then(() => console.log("Service Worker Registered"));
-  }
-
-  function requestPermission() {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        alert("Notification Permission Granted!");
-      }
-    });
-  }
-
-  function sendNotification() {
-    navigator.serviceWorker.ready.then(registration => {
-      registration.showNotification("Daily Routine Reminder 🔔", {
-        body: "Time to complete your task!",
-        icon: "/routineapp/icon.png"
+    function enableNotification() {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          alert("Notification Enabled ✅");
+        } else {
+          alert("Permission Denied ❌");
+        }
       });
-    });
-  }
-</script>
+    }
+
+    function sendNotification() {
+      if (Notification.permission === "granted") {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification("Daily Routine Reminder 🔔", {
+            body: "Time to complete your task!",
+            icon: "/routineapp/icon.png"
+          });
+        });
+      } else {
+        alert("Please enable notification first");
+      }
+    }
+  </script>
 
 </body>
 </html>
