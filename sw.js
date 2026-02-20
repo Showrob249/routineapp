@@ -20,3 +20,14 @@ self.addEventListener("fetch", event => {
       .then(response => response || fetch(event.request))
   );
 });
+
+// 🔔 Push Event (PART 3)
+self.addEventListener("push", event => {
+  const data = event.data.json();
+
+  self.registration.showNotification(data.title, {
+    body: data.body,
+    icon: "/routineapp/icon.png",
+    badge: "/routineapp/icon.png"
+  });
+});
