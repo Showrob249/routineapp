@@ -1,196 +1,154 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Daily Routine</title>
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4CAF50">
+
 <style>
-body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background: linear-gradient(135deg,#667eea,#764ba2);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #4CAF50, #2196F3);
+  color: white;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
 }
 
-.container{
-  width:95%;
-  max-width:400px;
-  background: rgba(255,255,255,0.15);
-  backdrop-filter: blur(15px);
-  padding:20px;
-  border-radius:20px;
-  color:white;
-  box-shadow:0 10px 25px rgba(0,0,0,0.3);
+.container {
+  background: rgba(0,0,0,0.3);
+  padding: 20px;
+  border-radius: 15px;
+  max-width: 400px;
+  margin: auto;
 }
 
-h2{
-  text-align:center;
+input, button {
+  padding: 10px;
+  margin: 5px;
+  border-radius: 8px;
+  border: none;
 }
 
-input,button{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  border:none;
-  border-radius:10px;
+button {
+  background: #ff9800;
+  color: white;
+  cursor: pointer;
 }
 
-button{
-  background:#00c9a7;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
+.task {
+  background: white;
+  color: black;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 8px;
 }
 
-ul{
-  list-style:none;
-  padding:0;
-}
-
-li{
-  background:rgba(255,255,255,0.2);
-  margin:5px 0;
-  padding:10px;
-  border-radius:10px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.progress-container{
-  background:rgba(255,255,255,0.2);
-  height:10px;
-  border-radius:10px;
-  overflow:hidden;
-  margin-top:10px;
-}
-
-.progress-bar{
-  height:100%;
-  width:0%;
-  background:#00ffcc;
-  transition:0.4s;
+#installBtn {
+  display: none;
+  background: red;
 }
 </style>
 </head>
 
 <body>
 
+<h2>📅 My Daily Routine</h2>
+
+<button id="installBtn">Install App</button>
+
 <div class="container">
-<h2>Daily Routine</h2>
+  <input type="text" id="taskInput" placeholder="Task name">
+  <input type="time" id="timeInput">
+  <button onclick="addTask()">Add Task</button>
 
-<input type="text" id="taskInput" placeholder="Enter task">
-<input type="time" id="timeInput">
-<button onclick="addTask()">Add Task</button>
-
-<ul id="taskList"></ul>
-
-<div class="progress-container">
-  <div class="progress-bar" id="progressBar"></div>
+  <div id="taskList"></div>
 </div>
-<p id="progressText">0% Completed</p>
 
-</div>
+<audio id="alarmSound" src="alarm.mp3" loop></audio>
 
 <script>
-let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-let alarm = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
-alarm.loop = true;
-let activeAlarmIndex = null;
 
-function saveTasks(){
-  localStorage.setItem("tasks",JSON.stringify(tasks));
-}
+let deferredPrompt;
+const installBtn = document.getElementById("installBtn");
 
-function renderTasks(){
-  let list = document.getElementById("taskList");
-  list.innerHTML="";
-  tasks.forEach((task,index)=>{
-    let li=document.createElement("li");
-
-    li.innerHTML=`
-      <span>${task.text} (${task.time}) ${task.completed?"✅":""}</span>
-      <button onclick="completeTask(${index})">✔</button>
-    `;
-    list.appendChild(li);
-  });
-
-  updateProgress();
-}
-
-function addTask(){
-  let text=document.getElementById("taskInput").value;
-  let time=document.getElementById("timeInput").value;
-
-  if(!text||!time) return alert("Enter task & time");
-
-  tasks.push({
-    text,
-    time,
-    completed:false,
-    lastNotified:""
-  });
-
-  saveTasks();
-  renderTasks();
-
-  document.getElementById("taskInput").value="";
-  document.getElementById("timeInput").value="";
-}
-
-function completeTask(index){
-  tasks[index].completed=true;
-
-  if(activeAlarmIndex===index){
-    alarm.pause();
-    alarm.currentTime=0;
-    activeAlarmIndex=null;
-  }
-
-  saveTasks();
-  renderTasks();
-}
-
-function checkReminder(){
-  let now=new Date();
-  let currentTime=now.toTimeString().slice(0,5);
-  let today=now.toDateString();
-
-  tasks.forEach((task,index)=>{
-    if(task.time===currentTime && task.lastNotified!==today && !task.completed){
-      alarm.play();
-      activeAlarmIndex=index;
-      task.lastNotified=today;
-      saveTasks();
-    }
-  });
-}
-
-function updateProgress(){
-  let total=tasks.length;
-  let done=tasks.filter(t=>t.completed).length;
-  let percent= total===0 ? 0 : Math.round((done/total)*100);
-
-  document.getElementById("progressBar").style.width=percent+"%";
-  document.getElementById("progressText").innerText=percent+"% Completed";
-}
-
-setInterval(checkReminder,1000);
-
-// unlock sound
-document.body.addEventListener("click",function unlock(){
-  alarm.play().then(()=>{
-    alarm.pause();
-    alarm.currentTime=0;
-  });
-  document.body.removeEventListener("click",unlock);
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = "block";
 });
 
-renderTasks();
+installBtn.addEventListener("click", async () => {
+  installBtn.style.display = "none";
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+});
+
+function addTask() {
+  const name = document.getElementById("taskInput").value;
+  const time = document.getElementById("timeInput").value;
+
+  if (!name || !time) return alert("Enter task & time");
+
+  const div = document.createElement("div");
+  div.className = "task";
+  div.innerHTML = `
+    <b>${name}</b><br>
+    ⏰ ${time}
+    <br><br>
+    <button onclick="completeTask(this)">Completed</button>
+  `;
+
+  document.getElementById("taskList").appendChild(div);
+
+  scheduleAlarm(name, time);
+}
+
+function scheduleAlarm(name, time) {
+  const now = new Date();
+  const alarmTime = new Date();
+
+  const [hour, minute] = time.split(":");
+  alarmTime.setHours(hour);
+  alarmTime.setMinutes(minute);
+  alarmTime.setSeconds(0);
+
+  const diff = alarmTime - now;
+
+  if (diff > 0) {
+    setTimeout(() => {
+      document.getElementById("alarmSound").play();
+      showNotification(name);
+    }, diff);
+  }
+}
+
+function completeTask(btn) {
+  document.getElementById("alarmSound").pause();
+  document.getElementById("alarmSound").currentTime = 0;
+  btn.parentElement.remove();
+}
+
+function showNotification(taskName) {
+  if (Notification.permission === "granted") {
+    new Notification("⏰ Task Reminder", {
+      body: taskName
+    });
+  }
+}
+
+if ("Notification" in window) {
+  Notification.requestPermission();
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+
 </script>
 
 </body>
