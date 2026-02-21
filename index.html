@@ -7,67 +7,110 @@
 <link rel="manifest" href="manifest.json">
 
 <style>
-body{
+*{
   margin:0;
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg,#00c6ff,#0072ff);
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins',sans-serif;
+}
+
+body{
+  min-height:100vh;
+  background: linear-gradient(135deg,#141E30,#243B55);
   display:flex;
   flex-direction:column;
   align-items:center;
-  min-height:100vh;
+  padding:20px;
   color:white;
 }
 
 h1{
-  margin-top:30px;
-  font-size:28px;
+  margin:20px 0 30px;
+  font-size:26px;
+  font-weight:600;
+  letter-spacing:1px;
 }
 
 .card{
-  backdrop-filter: blur(15px);
-  background: rgba(255,255,255,0.1);
-  padding:20px;
+  width:100%;
+  max-width:380px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
   border-radius:20px;
-  width:350px;
-  margin:15px 0;
-  box-shadow:0 10px 30px rgba(0,0,0,0.3);
+  padding:20px;
+  margin-bottom:20px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.4);
+  transition:0.3s ease;
+}
+
+.card:hover{
+  transform: translateY(-5px);
 }
 
 input{
-  padding:10px;
-  border-radius:10px;
-  border:none;
-  margin:5px 0;
   width:100%;
+  padding:12px;
+  margin-bottom:12px;
+  border-radius:12px;
+  border:none;
+  outline:none;
+  background: rgba(255,255,255,0.15);
+  color:white;
+  font-size:14px;
+}
+
+input::placeholder{
+  color:#ddd;
 }
 
 button{
-  padding:10px;
+  padding:10px 15px;
   border:none;
-  border-radius:10px;
-  margin-top:10px;
+  border-radius:12px;
+  font-weight:500;
   cursor:pointer;
+  transition:0.2s;
 }
 
-.add{background:#ff9800;color:white;width:100%;}
-.complete{background:#4caf50;color:white;margin-right:5px;}
-.delete{background:#f44336;color:white;}
+.add{
+  width:100%;
+  background: linear-gradient(135deg,#ff9800,#ff5722);
+  color:white;
+}
+
+.complete{
+  background:#4caf50;
+  color:white;
+}
+
+.delete{
+  background:#f44336;
+  color:white;
+}
+
+button:hover{
+  opacity:0.85;
+}
 
 .install{
   position:fixed;
-  left:20px;
   top:20px;
-  background:red;
+  left:20px;
+  padding:8px 15px;
+  border-radius:25px;
+  background: linear-gradient(135deg,#ff416c,#ff4b2b);
   color:white;
   display:none;
+  box-shadow:0 5px 20px rgba(0,0,0,0.3);
 }
 
 .timer{
-  background:red;
-  padding:5px 15px;
-  border-radius:20px;
-  display:inline-block;
   margin-top:10px;
+  display:inline-block;
+  padding:6px 15px;
+  border-radius:20px;
+  background:#ff3d3d;
+  font-weight:bold;
 }
 </style>
 </head>
@@ -175,6 +218,7 @@ document.getElementById("installBtn").addEventListener("click",()=>{
 
 </body>
 </html>
+
 
 
 
