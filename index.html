@@ -1,69 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Daily Routine</title>
-
 <link rel="manifest" href="manifest.json">
 
 <style>
-body {
+body{
   margin:0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg,#43a047,#1e88e5);
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg,#00c6ff,#0072ff);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-height:100vh;
   color:white;
-  text-align:center;
 }
 
-h1 { margin-top:30px; }
+h1{
+  margin-top:30px;
+  font-size:28px;
+}
 
-.container {
-  background: rgba(0,0,0,0.3);
+.card{
+  backdrop-filter: blur(15px);
+  background: rgba(255,255,255,0.1);
   padding:20px;
-  border-radius:15px;
+  border-radius:20px;
   width:350px;
-  margin:20px auto;
+  margin:15px 0;
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);
 }
 
-input, button {
+input{
   padding:10px;
-  border-radius:8px;
+  border-radius:10px;
   border:none;
-  margin:5px;
+  margin:5px 0;
+  width:100%;
 }
 
-.add-btn { background:orange; color:white; }
-.complete { background:green; color:white; }
-.delete { background:red; color:white; }
+button{
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  margin-top:10px;
+  cursor:pointer;
+}
 
-.install-btn {
+.add{background:#ff9800;color:white;width:100%;}
+.complete{background:#4caf50;color:white;margin-right:5px;}
+.delete{background:#f44336;color:white;}
+
+.install{
   position:fixed;
   left:20px;
   top:20px;
   background:red;
   color:white;
+  display:none;
 }
-.timer { background:red; padding:5px 15px; border-radius:20px; display:inline-block; }
+
+.timer{
+  background:red;
+  padding:5px 15px;
+  border-radius:20px;
+  display:inline-block;
+  margin-top:10px;
+}
 </style>
 </head>
-
 <body>
 
-<button id="installBtn" class="install-btn" style="display:none;">Install App</button>
+<button id="installBtn" class="install">Install App</button>
 
 <h1>📅 My Daily Routine</h1>
 
-<div class="container">
-  <input type="text" id="taskInput" placeholder="Task Name">
-  <input type="time" id="timeInput">
-  <br>
-  <button class="add-btn" onclick="addTask()">Add Task</button>
+<div class="card">
+<input type="text" id="taskName" placeholder="Task Name">
+<input type="time" id="taskTime">
+<button class="add" onclick="addTask()">Add Task</button>
 </div>
 
-<div id="taskList"></div>
+<div id="tasks"></div>
 
-<audio id="alarmSound" loop>
+<audio id="alarm" loop>
 <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
 </audio>
 
@@ -71,91 +93,89 @@ input, button {
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let deferredPrompt;
 
-function saveTasks() {
-  localStorage.setItem("tasks", JSON.stringify(tasks));
+function save(){
+  localStorage.setItem("tasks",JSON.stringify(tasks));
 }
 
-function renderTasks() {
-  let list = document.getElementById("taskList");
-  list.innerHTML = "";
-
-  tasks.forEach((task,index) => {
-    list.innerHTML += `
-    <div class="container">
+function render(){
+  const container=document.getElementById("tasks");
+  container.innerHTML="";
+  tasks.forEach((task,i)=>{
+    container.innerHTML+=`
+    <div class="card">
       <h3>${task.name}</h3>
       <p>${task.time}</p>
-      <div class="timer" id="timer-${index}">Waiting</div><br>
-      <button class="complete" onclick="completeTask(${index})">Completed</button>
-      <button class="delete" onclick="deleteTask(${index})">Delete</button>
-    </div>
-    `;
+      <div class="timer" id="timer-${i}">Waiting</div>
+      <div style="margin-top:10px;">
+      <button class="complete" onclick="completeTask(${i})">Completed</button>
+      <button class="delete" onclick="deleteTask(${i})">Delete</button>
+      </div>
+    </div>`;
   });
 }
 
-function addTask() {
-  let name = document.getElementById("taskInput").value;
-  let time = document.getElementById("timeInput").value;
+function addTask(){
+  const name=document.getElementById("taskName").value;
+  const time=document.getElementById("taskTime").value;
   if(!name || !time) return;
-
   tasks.push({name,time,completed:false});
-  saveTasks();
-  renderTasks();
+  save();
+  render();
 }
 
 function deleteTask(i){
   tasks.splice(i,1);
-  saveTasks();
-  renderTasks();
+  save();
+  render();
 }
 
 function completeTask(i){
-  document.getElementById("alarmSound").pause();
-  document.getElementById("alarmSound").currentTime = 0;
-  tasks[i].completed = true;
-  saveTasks();
+  tasks[i].completed=true;
+  document.getElementById("alarm").pause();
+  document.getElementById("alarm").currentTime=0;
+  save();
 }
 
-function checkAlarm(){
-  let now = new Date();
-  let current = now.toTimeString().slice(0,5);
-
-  tasks.forEach((task,index)=>{
-    if(task.time === current && !task.completed){
-      document.getElementById("alarmSound").play();
-      if(Notification.permission==="granted"){
-        new Notification("⏰ Time to Complete Task!");
-      }
-      document.getElementById(`timer-${index}`).innerText="00:00";
+function checkTime(){
+  const now=new Date().toTimeString().slice(0,5);
+  tasks.forEach((task,i)=>{
+    if(task.time===now && !task.completed){
+      document.getElementById("alarm").play();
+      document.getElementById(`timer-${i}`).innerText="00:00";
+      navigator.serviceWorker.ready.then(reg=>{
+        reg.showNotification("⏰ Time to Complete Task!",{
+          body:task.name,
+          icon:"icon-192.png"
+        });
+      });
     }
   });
 }
 
-setInterval(checkAlarm,1000);
+setInterval(checkTime,1000);
 
 Notification.requestPermission();
 
-renderTasks();
+render();
 
-if ("serviceWorker" in navigator) {
+if("serviceWorker" in navigator){
   navigator.serviceWorker.register("service-worker.js");
 }
 
-window.addEventListener("beforeinstallprompt", (e)=>{
+window.addEventListener("beforeinstallprompt",(e)=>{
   e.preventDefault();
-  deferredPrompt = e;
+  deferredPrompt=e;
   document.getElementById("installBtn").style.display="block";
 });
 
-document.getElementById("installBtn").addEventListener("click", async ()=>{
-  if(deferredPrompt){
-    deferredPrompt.prompt();
-    deferredPrompt = null;
-  }
+document.getElementById("installBtn").addEventListener("click",()=>{
+  deferredPrompt.prompt();
 });
 </script>
 
 </body>
 </html>
+
 
 
 
