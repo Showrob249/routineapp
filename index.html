@@ -8,6 +8,33 @@
 <link rel="manifest" href="manifest.json">
 
 <style>
+
+/* 🔥 Active Glow */
+.active-glow {
+  box-shadow: 0 0 25px rgba(255,255,0,0.8);
+  border: 2px solid yellow;
+}
+
+/* 🔥 Red Pulse Animation (Alarm) */
+@keyframes pulseRed {
+  0% { box-shadow: 0 0 0 0 rgba(255,0,0,0.7); }
+  70% { box-shadow: 0 0 0 25px rgba(255,0,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,0,0,0); }
+}
+
+.alarm-active {
+  animation: pulseRed 1s infinite;
+  border: 2px solid red;
+}
+
+/* ✅ Completed Green Smooth */
+.completed-task {
+  background: rgba(76,175,80,0.2) !important;
+  border: 2px solid #4caf50;
+  transition: all 0.5s ease;
+  box-shadow: 0 0 20px rgba(76,175,80,0.7);
+}
+
 *{
   margin:0;
   padding:0;
@@ -146,7 +173,7 @@ function render(){
   container.innerHTML="";
   tasks.forEach((task,i)=>{
     container.innerHTML+=`
-    <div class="card">
+    <div class="card" id="card-${i}">
       <h3>${task.name}</h3>
       <p>${task.time}</p>
       <div class="timer" id="timer-${i}">Waiting</div>
@@ -176,7 +203,11 @@ function deleteTask(i){
 function completeTask(i){
   tasks[i].completed=true;
   document.getElementById("alarm").pause();
-  document.getElementById("alarm").currentTime=0;
+  let card = document.getElementById("card-"+i);
+card.classList.remove("alarm-active");
+card.classList.remove("active-glow");
+card.classList.add("completed-task");
+ document.getElementById("alarm").currentTime=0;
   save();
 }
 
@@ -185,6 +216,8 @@ function checkTime(){
   tasks.forEach((task,i)=>{
     if(task.time===now && !task.completed){
       document.getElementById("alarm").play();
+     document.getElementById("card-"+i).classList.add("active-glow");
+      document.getElementById("card-"+i).classList.add("alarm-active");
       document.getElementById(`timer-${i}`).innerText="00:00";
       navigator.serviceWorker.ready.then(reg=>{
         reg.showNotification("⏰ Time to Complete Task!",{
@@ -219,6 +252,7 @@ document.getElementById("installBtn").addEventListener("click",()=>{
 
 </body>
 </html>
+
 
 
 
