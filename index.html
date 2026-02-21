@@ -225,13 +225,21 @@ function checkReminder() {
 
 setInterval(checkReminder, 60000);
 
+
 renderTasks();
+
+setTimeout(() => {
+  let test = new Audio("./alarm.mp3");
+  test.play();
+}, 3000);
+
 </script>
 
 <audio id="alarmSound" src="alarm.mp3" loop></audio>
 
 </body>
 </html>
+
 
 
 
