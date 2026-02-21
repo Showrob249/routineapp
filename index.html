@@ -1,158 +1,162 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Daily Routine</title>
 
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4CAF50">
 
 <style>
 body {
+  margin:0;
   font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #4CAF50, #2196F3);
-  color: white;
-  text-align: center;
-  margin: 0;
-  padding: 20px;
+  background: linear-gradient(135deg,#43a047,#1e88e5);
+  color:white;
+  text-align:center;
 }
+
+h1 { margin-top:30px; }
 
 .container {
   background: rgba(0,0,0,0.3);
-  padding: 20px;
-  border-radius: 15px;
-  max-width: 400px;
-  margin: auto;
+  padding:20px;
+  border-radius:15px;
+  width:350px;
+  margin:20px auto;
 }
 
 input, button {
-  padding: 10px;
-  margin: 5px;
-  border-radius: 8px;
-  border: none;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  margin:5px;
 }
 
-button {
-  background: #ff9800;
-  color: white;
-  cursor: pointer;
-}
+.add-btn { background:orange; color:white; }
+.complete { background:green; color:white; }
+.delete { background:red; color:white; }
 
-.task {
-  background: white;
-  color: black;
-  margin: 10px 0;
-  padding: 10px;
-  border-radius: 8px;
+.install-btn {
+  position:fixed;
+  left:20px;
+  top:20px;
+  background:red;
+  color:white;
 }
-
-#installBtn {
-  display: none;
-  background: red;
-}
+.timer { background:red; padding:5px 15px; border-radius:20px; display:inline-block; }
 </style>
 </head>
 
 <body>
 
-<h2>📅 My Daily Routine</h2>
+<button id="installBtn" class="install-btn" style="display:none;">Install App</button>
 
-<button id="installBtn">Install App</button>
+<h1>📅 My Daily Routine</h1>
 
 <div class="container">
-  <input type="text" id="taskInput" placeholder="Task name">
+  <input type="text" id="taskInput" placeholder="Task Name">
   <input type="time" id="timeInput">
-  <button onclick="addTask()">Add Task</button>
-
-  <div id="taskList"></div>
+  <br>
+  <button class="add-btn" onclick="addTask()">Add Task</button>
 </div>
 
-<audio id="alarmSound" src="alarm.mp3" loop></audio>
+<div id="taskList"></div>
+
+<audio id="alarmSound" loop>
+<source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
+</audio>
 
 <script>
-
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let deferredPrompt;
-const installBtn = document.getElementById("installBtn");
 
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.style.display = "block";
-});
+function saveTasks() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
 
-installBtn.addEventListener("click", async () => {
-  installBtn.style.display = "none";
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null;
-});
+function renderTasks() {
+  let list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  tasks.forEach((task,index) => {
+    list.innerHTML += `
+    <div class="container">
+      <h3>${task.name}</h3>
+      <p>${task.time}</p>
+      <div class="timer" id="timer-${index}">Waiting</div><br>
+      <button class="complete" onclick="completeTask(${index})">Completed</button>
+      <button class="delete" onclick="deleteTask(${index})">Delete</button>
+    </div>
+    `;
+  });
+}
 
 function addTask() {
-  const name = document.getElementById("taskInput").value;
-  const time = document.getElementById("timeInput").value;
+  let name = document.getElementById("taskInput").value;
+  let time = document.getElementById("timeInput").value;
+  if(!name || !time) return;
 
-  if (!name || !time) return alert("Enter task & time");
-
-  const div = document.createElement("div");
-  div.className = "task";
-  div.innerHTML = `
-    <b>${name}</b><br>
-    ⏰ ${time}
-    <br><br>
-    <button onclick="completeTask(this)">Completed</button>
-  `;
-
-  document.getElementById("taskList").appendChild(div);
-
-  scheduleAlarm(name, time);
+  tasks.push({name,time,completed:false});
+  saveTasks();
+  renderTasks();
 }
 
-function scheduleAlarm(name, time) {
-  const now = new Date();
-  const alarmTime = new Date();
-
-  const [hour, minute] = time.split(":");
-  alarmTime.setHours(hour);
-  alarmTime.setMinutes(minute);
-  alarmTime.setSeconds(0);
-
-  const diff = alarmTime - now;
-
-  if (diff > 0) {
-    setTimeout(() => {
-      document.getElementById("alarmSound").play();
-      showNotification(name);
-    }, diff);
-  }
+function deleteTask(i){
+  tasks.splice(i,1);
+  saveTasks();
+  renderTasks();
 }
 
-function completeTask(btn) {
+function completeTask(i){
   document.getElementById("alarmSound").pause();
   document.getElementById("alarmSound").currentTime = 0;
-  btn.parentElement.remove();
+  tasks[i].completed = true;
+  saveTasks();
 }
 
-function showNotification(taskName) {
-  if (Notification.permission === "granted") {
-    new Notification("⏰ Task Reminder", {
-      body: taskName
-    });
-  }
+function checkAlarm(){
+  let now = new Date();
+  let current = now.toTimeString().slice(0,5);
+
+  tasks.forEach((task,index)=>{
+    if(task.time === current && !task.completed){
+      document.getElementById("alarmSound").play();
+      if(Notification.permission==="granted"){
+        new Notification("⏰ Time to Complete Task!");
+      }
+      document.getElementById(`timer-${index}`).innerText="00:00";
+    }
+  });
 }
 
-if ("Notification" in window) {
-  Notification.requestPermission();
-}
+setInterval(checkAlarm,1000);
+
+Notification.requestPermission();
+
+renderTasks();
 
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
+  navigator.serviceWorker.register("service-worker.js");
 }
 
+window.addEventListener("beforeinstallprompt", (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById("installBtn").style.display="block";
+});
+
+document.getElementById("installBtn").addEventListener("click", async ()=>{
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+  }
+});
 </script>
 
 </body>
 </html>
+
 
 
 
