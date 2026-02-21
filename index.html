@@ -101,19 +101,41 @@ function renderTasks() {
   });
 
 let activeAlarmIndex = null;
+let alarm;
+
+function initAlarm() {
+  alarm = new Audio();
+  alarm.src = "./alarm.mp3";
+  alarm.loop = true;
+}
 
 function startAlarm(index) {
   activeAlarmIndex = index;
-  let alarm = document.getElementById("alarmSound");
-  alarm.play();
+
+  if (!alarm) initAlarm();
+
+  alarm.play().catch(err => {
+    console.log("Autoplay blocked:", err);
+  });
 }
 
 function stopAlarm() {
-  let alarm = document.getElementById("alarmSound");
-  alarm.pause();
-  alarm.currentTime = 0;
+  if (alarm) {
+    alarm.pause();
+    alarm.currentTime = 0;
+  }
   activeAlarmIndex = null;
 }
+
+// unlock audio after first click
+document.addEventListener("click", function unlock() {
+  initAlarm();
+  alarm.play().then(() => {
+    alarm.pause();
+    alarm.currentTime = 0;
+  });
+  document.removeEventListener("click", unlock);
+});
 
 // 🔥 Progress Calculation
   let percent = tasks.length === 0
@@ -210,6 +232,7 @@ renderTasks();
 
 </body>
 </html>
+
 
 
 
