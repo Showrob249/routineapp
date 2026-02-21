@@ -100,7 +100,22 @@ function renderTasks() {
     `;
   });
 
-  // 🔥 Progress Calculation
+let activeAlarmIndex = null;
+
+function startAlarm(index) {
+  activeAlarmIndex = index;
+  let alarm = document.getElementById("alarmSound");
+  alarm.play();
+}
+
+function stopAlarm() {
+  let alarm = document.getElementById("alarmSound");
+  alarm.pause();
+  alarm.currentTime = 0;
+  activeAlarmIndex = null;
+}
+
+// 🔥 Progress Calculation
   let percent = tasks.length === 0
     ? 0
     : Math.round((completedCount / tasks.length) * 100);
@@ -188,6 +203,7 @@ renderTasks();
 
 </body>
 </html>
+
 
 
 
