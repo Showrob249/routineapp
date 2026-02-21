@@ -161,6 +161,11 @@ function completeTask(index) {
   let today = new Date().toDateString();
   tasks[index].completed = true;
   tasks[index].lastCompletedDate = today;
+
+  if (activeAlarmIndex === index) {
+    stopAlarm();  // 🔥 Alarm বন্ধ করবে
+  }
+
   saveTasks();
   renderTasks();
 }
@@ -179,7 +184,7 @@ function checkReminder() {
   let currentTime = now.toTimeString().slice(0,5);
   let today = now.toDateString();
 
-  tasks.forEach(task => {
+  tasks.forEach((task, index) => {
     if (
       task.time === currentTime &&
       task.lastNotified !== today &&
@@ -187,9 +192,11 @@ function checkReminder() {
     ) {
       if (Notification.permission === "granted") {
         showReminder(task);
-        task.lastNotified = today;
-        saveTasks();
       }
+
+      startAlarm(index);  // 🔥 Alarm start
+      task.lastNotified = today;
+      saveTasks();
     }
   });
 }
@@ -203,6 +210,7 @@ renderTasks();
 
 </body>
 </html>
+
 
 
 
