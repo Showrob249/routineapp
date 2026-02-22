@@ -1,277 +1,98 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔥 My Daily Routine</title>
-
-<link rel="manifest" href="manifest.json">
+<title>Red Alert Test</title>
 
 <style>
-
-/* 🔥 FULL SCREEN RED ALERT MODE */
-
-@keyframes redFlash {
-  0% { background: #000; }
-  50% { background: #8b0000; }
-  100% { background: #000; }
+body {
+  margin: 0;
+  background: black;
+  color: white;
+  font-family: Arial;
+  text-align: center;
+  padding-top: 100px;
 }
 
-@keyframes alertTextPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+/* 🔥 Red Flash Animation */
+@keyframes redFlash {
+  0% { background: black; }
+  50% { background: darkred; }
+  100% { background: black; }
 }
 
 .red-alert {
   animation: redFlash 1s infinite;
 }
 
+/* 🔥 Overlay */
 .alert-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(139, 0, 0, 0.95);
+  background: rgba(139,0,0,0.95);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
-  font-size: 50px;
+  font-size: 60px;
   font-weight: bold;
-  color: white;
-  text-align: center;
-  animation: alertTextPulse 1s infinite;
+  z-index: 9999;
 }
 
-*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif;}
-
-body{
-  min-height:100vh;
-  background:linear-gradient(135deg,#141E30,#243B55);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding:20px;
-  color:white;
-}
-
-/* HEADER */
-h1{
-  margin:20px 0;
-  font-size:28px;
-  color:#00ffcc;
-}
-
-/* CARD */
-.card{
-  width:100%;
-  max-width:380px;
-  background:rgba(255,255,255,0.08);
-  backdrop-filter:blur(20px);
-  border-radius:20px;
-  padding:20px;
-  margin-bottom:20px;
-  box-shadow:0 8px 30px rgba(0,0,0,0.4);
-  transition:0.3s;
-}
-
-input{
-  width:100%;
-  padding:12px;
-  margin-bottom:10px;
-  border-radius:10px;
-  border:none;
-}
-
-button{
-  padding:10px 15px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  margin:5px 5px 0 0;
-}
-
-/* BUTTON COLORS */
-.add{background:#ff9800;color:white;width:100%;}
-.complete{background:#4caf50;color:white;}
-.delete{background:#f44336;color:white;}
-
-/* 🔥 ACTIVE GLOW */
-.active-glow{
-  box-shadow:0 0 25px yellow;
-  border:2px solid yellow;
-}
-
-/* 🔥 RED PULSE */
-@keyframes pulseRed{
-  0%{box-shadow:0 0 0 0 rgba(255,0,0,0.7);}
-  70%{box-shadow:0 0 0 25px rgba(255,0,0,0);}
-  100%{box-shadow:0 0 0 0 rgba(255,0,0,0);}
-}
-.alarm-active{
-  animation:pulseRed 1s infinite;
-  border:2px solid red;
-}
-
-/* ✅ COMPLETED */
-.completed-task{
-  background:rgba(76,175,80,0.2)!important;
-  border:2px solid #4caf50;
-  box-shadow:0 0 20px rgba(76,175,80,0.7);
-}
-
-/* 🔥 SCREEN SHAKE */
-@keyframes shake{
-  0%{transform:translate(0,0);}
-  25%{transform:translate(-5px,5px);}
-  50%{transform:translate(5px,-5px);}
-  75%{transform:translate(-5px,5px);}
-  100%{transform:translate(0,0);}
-}
-.shake-screen{
-  animation:shake 0.4s infinite;
-}
-
-/* 🔴 FULL RED ALERT */
-#redAlert{
-  position:fixed;
-  top:0;left:0;
-  width:100%;height:100%;
-  background:#b00000;
-  display:none;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-  z-index:9999;
-  animation:redFlash 0.8s infinite alternate;
-}
-#redAlert h1{
-  font-size:40px;
-}
-@keyframes redFlash{
-  from{background:#b00000;}
-  to{background:#ff0000;}
+button {
+  padding: 15px 30px;
+  font-size: 18px;
+  margin: 10px;
+  cursor: pointer;
 }
 </style>
 </head>
+
 <body>
 
-<h1>🔥 My Daily Routine</h1>
+<h1>🔥 Red Alert Demo</h1>
 
-<div class="card">
-  <input type="text" id="taskName" placeholder="Task Name">
-  <input type="time" id="taskTime">
-  <button class="add" onclick="addTask()">Add Task</button>
-</div>
-
-<div id="taskContainer"></div>
-
-<!-- RED ALERT SCREEN -->
-<div id="redAlert">
-  <h1>🚨 TASK TIME 🚨</h1>
-  <p>Complete Your Task Now!</p>
-</div>
+<button onclick="startAlert()">Start Alarm</button>
+<button onclick="stopAlert()">Completed</button>
 
 <audio id="alarm" loop>
-<source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
+  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
 </audio>
 
 <script>
-let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-
-function save(){localStorage.setItem("tasks",JSON.stringify(tasks));}
-
-function render(){
-  const container=document.getElementById("taskContainer");
-  container.innerHTML="";
-  tasks.forEach((task,i)=>{
-    container.innerHTML+=`
-      <div class="card" id="card-${i}">
-        <h3>${task.name}</h3>
-        <p>${task.time}</p>
-        <button class="complete" onclick="completeTask(${i})">Completed</button>
-        <button class="delete" onclick="deleteTask(${i})">Delete</button>
-      </div>
-    `;
-  });
-}
-
-function startRedAlert() {
+function startAlert() {
+  document.getElementById("alarm").play();
   document.body.classList.add("red-alert");
 
-  const overlay = document.createElement("div");
+  let overlay = document.createElement("div");
   overlay.className = "alert-overlay";
-  overlay.id = "alertOverlay";
+  overlay.id = "alertBox";
   overlay.innerHTML = "🚨 WAKE UP 🚨";
 
   document.body.appendChild(overlay);
 }
 
-function stopRedAlert() {
+function stopAlert() {
+  let alarm = document.getElementById("alarm");
+  alarm.pause();
+  alarm.currentTime = 0;
+
   document.body.classList.remove("red-alert");
 
-  const overlay = document.getElementById("alertOverlay");
-  if (overlay) {
-    overlay.remove();
-  }
+  let overlay = document.getElementById("alertBox");
+  if (overlay) overlay.remove();
 }
-
-function addTask(){
-  const name=document.getElementById("taskName").value;
-  const time=document.getElementById("taskTime").value;
-  if(!name||!time)return;
-  tasks.push({name,time,completed:false});
-  save();render();
-}
-
-function deleteTask(i){
-  tasks.splice(i,1);
-  save();render();
-}
-
-function completeTask(i){
-  tasks[i].completed=true;
-  save();
-
-  let card=document.getElementById("card-"+i);
-  card.classList.remove("alarm-active","active-glow");
-  card.classList.add("completed-task");
-
-  document.getElementById("alarm").pause();
-  document.getElementById("alarm").currentTime=0;
-  stopRedAlert();
-  document.body.classList.remove("shake-screen");
-  document.getElementById("redAlert").style.display="none";
-}
-
-function checkTime(){
-  const now=new Date().toTimeString().slice(0,5);
-  tasks.forEach((task,i)=>{
-    if(task.time===now && !task.completed){
-     document.getElementById("alarm").play();
-     startRedAlert();
-      document.body.classList.add("shake-screen");
-      document.getElementById("redAlert").style.display="flex";
-
-      let card=document.getElementById("card-"+i);
-      card.classList.add("active-glow","alarm-active");
-
-      if(Notification.permission==="granted"){
-        new Notification("⏰ Time to Complete Task!");
-      }
-    }
-  });
-}
-
-setInterval(checkTime,1000);
-Notification.requestPermission();
-render();
 </script>
 
 </body>
 </html>
+
+
+
+ 
+
 
 
 
