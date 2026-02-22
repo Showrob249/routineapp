@@ -130,6 +130,7 @@ installBtn.onclick=async()=>{
 };
 
 function addTask(){
+  document.getElementById("alarmSound").play().then(a=>a.pause());
   const name=document.getElementById("taskName").value;
   const time=document.getElementById("taskTime").value;
 
@@ -187,23 +188,38 @@ function completeTask(id){
 }
 
 function scheduleAlarm(task){
-  const now=new Date();
-  const alarmTime=new Date();
-  const [h,m]=task.time.split(":");
+  const now = new Date();
+  const alarmTime = new Date();
+  const [h,m] = task.time.split(":");
 
   alarmTime.setHours(h);
   alarmTime.setMinutes(m);
   alarmTime.setSeconds(0);
 
-  const diff=alarmTime-now;
+  const diff = alarmTime - now;
 
-  if(diff>0){
-    setTimeout(()=>{
-      task.alarm=true;
-      document.getElementById("alarmSound").play();
-      showNotification(task.name);
+  if(diff > 0){
+    setTimeout(() => {
+
+      task.alarm = true;
       renderTasks();
-    },diff);
+
+      const alarm = document.getElementById("alarmSound");
+
+      // force play with user gesture workaround
+      alarm.play().then(() => {
+        console.log("Alarm playing");
+      }).catch(err => {
+        console.log("Autoplay blocked, waiting for user click");
+
+        document.body.addEventListener("click", () => {
+          alarm.play();
+        }, { once: true });
+      });
+
+      showNotification(task.name);
+
+    }, diff);
   }
 }
 
