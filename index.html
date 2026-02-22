@@ -3,80 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Smart Routine</title>
+<title>Ultra Smart Routine</title>
 
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#111827">
+<meta name="theme-color" content="#0f172a">
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: linear-gradient(135deg,#1f2937,#111827);
-  color: white;
-  text-align: center;
+body{
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+  color:white;
+  text-align:center;
 }
 
-h1 { margin-top:20px; }
+h1{margin-top:20px;}
 
-.container {
-  max-width:400px;
+.container{
+  max-width:420px;
   margin:auto;
   padding:20px;
 }
 
-input,button {
+.glass{
+  background:rgba(255,255,255,0.1);
+  backdrop-filter:blur(15px);
+  padding:15px;
+  border-radius:15px;
+  margin-top:20px;
+}
+
+input,button{
   padding:10px;
   margin:5px;
   border-radius:8px;
   border:none;
 }
 
-button {
-  background:#10b981;
-  color:white;
+button{
   cursor:pointer;
+  font-weight:bold;
 }
 
-.task {
+.addBtn{background:#10b981;color:white;}
+.deleteBtn{background:#ef4444;color:white;}
+.completeBtn{background:#3b82f6;color:white;}
+
+.task{
+  padding:15px;
+  margin-top:15px;
+  border-radius:12px;
   background:white;
   color:black;
-  padding:10px;
-  margin-top:10px;
-  border-radius:10px;
+  transition:0.3s;
 }
 
-#installBtn {
+.red{background:#ef4444;color:white;}
+.green{background:#10b981;color:white;}
+
+.progressBar{
+  width:100%;
+  background:#334155;
+  border-radius:10px;
+  overflow:hidden;
+  margin-top:15px;
+}
+
+.progress{
+  height:15px;
+  width:0%;
+  background:#10b981;
+  transition:0.4s;
+}
+
+#installBtn{
   display:none;
-  background:#ef4444;
+  background:#f59e0b;
+  color:white;
 }
 </style>
 </head>
 
 <body>
 
-<h1>📅 Smart Routine</h1>
+<h1>⚡ Ultra Smart Routine</h1>
 
 <button id="installBtn">Install App</button>
 
 <div class="container">
-  <input type="text" id="taskName" placeholder="Task name">
-  <input type="time" id="taskTime">
-  <button onclick="addTask()">Add Task</button>
 
-  <div id="taskList"></div>
+<div class="glass">
+<input type="text" id="taskName" placeholder="Task name">
+<input type="time" id="taskTime">
+<button class="addBtn" onclick="addTask()">Add Task</button>
 </div>
 
-<audio id="alarm" src="alarm.mp3" loop></audio>
+<div class="progressBar">
+<div class="progress" id="progress"></div>
+</div>
+<p id="percentText">0% Completed</p>
+
+<div id="taskList"></div>
+
+</div>
+
+<audio id="alarmSound" src="alarm.mp3" loop></audio>
 
 <script>
+
+let tasks=[];
 let deferredPrompt;
+
 const installBtn=document.getElementById("installBtn");
 
 window.addEventListener("beforeinstallprompt",(e)=>{
   e.preventDefault();
   deferredPrompt=e;
-  installBtn.style.display="block";
+  installBtn.style.display="inline-block";
 });
 
 installBtn.onclick=async()=>{
@@ -90,24 +133,64 @@ function addTask(){
   const name=document.getElementById("taskName").value;
   const time=document.getElementById("taskTime").value;
 
-  if(!name||!time){ alert("Enter task & time"); return;}
+  if(!name||!time){alert("Enter task & time");return;}
 
-  const div=document.createElement("div");
-  div.className="task";
-  div.innerHTML=`
-  <b>${name}</b><br>
-  ⏰ ${time}<br><br>
-  <button onclick="completeTask(this)">Completed</button>
-  `;
+  const task={
+    id:Date.now(),
+    name:name,
+    time:time,
+    completed:false
+  };
 
-  document.getElementById("taskList").appendChild(div);
-  scheduleAlarm(name,time);
+  tasks.push(task);
+  renderTasks();
+  scheduleAlarm(task);
 }
 
-function scheduleAlarm(name,time){
+function renderTasks(){
+  const list=document.getElementById("taskList");
+  list.innerHTML="";
+
+  tasks.forEach(task=>{
+    const div=document.createElement("div");
+    div.className="task";
+    if(task.completed) div.classList.add("green");
+    if(task.alarm) div.classList.add("red");
+
+    div.innerHTML=`
+      <b>${task.name}</b><br>
+      ⏰ ${task.time}<br><br>
+      <button class="completeBtn" onclick="completeTask(${task.id})">Complete</button>
+      <button class="deleteBtn" onclick="deleteTask(${task.id})">Delete</button>
+    `;
+
+    list.appendChild(div);
+  });
+
+  updateProgress();
+}
+
+function deleteTask(id){
+  tasks=tasks.filter(t=>t.id!==id);
+  updateProgress();
+  renderTasks();
+}
+
+function completeTask(id){
+  const task=tasks.find(t=>t.id===id);
+  if(task){
+    task.completed=true;
+    task.alarm=false;
+    stopAlarm();
+  }
+  renderTasks();
+}
+
+function scheduleAlarm(task){
   const now=new Date();
   const alarmTime=new Date();
-  const [h,m]=time.split(":");
+  const [h,m]=task.time.split(":");
+
   alarmTime.setHours(h);
   alarmTime.setMinutes(m);
   alarmTime.setSeconds(0);
@@ -116,21 +199,37 @@ function scheduleAlarm(name,time){
 
   if(diff>0){
     setTimeout(()=>{
-      document.getElementById("alarm").play();
-      showNotification(name);
+      task.alarm=true;
+      document.getElementById("alarmSound").play();
+      showNotification(task.name);
+      renderTasks();
     },diff);
   }
 }
 
-function completeTask(btn){
-  document.getElementById("alarm").pause();
-  document.getElementById("alarm").currentTime=0;
-  btn.parentElement.remove();
+function stopAlarm(){
+  const alarm=document.getElementById("alarmSound");
+  alarm.pause();
+  alarm.currentTime=0;
 }
 
-function showNotification(task){
+function updateProgress(){
+  if(tasks.length===0){
+    document.getElementById("progress").style.width="0%";
+    document.getElementById("percentText").innerText="0% Completed";
+    return;
+  }
+
+  const completed=tasks.filter(t=>t.completed).length;
+  const percent=Math.round((completed/tasks.length)*100);
+
+  document.getElementById("progress").style.width=percent+"%";
+  document.getElementById("percentText").innerText=percent+"% Completed";
+}
+
+function showNotification(name){
   if(Notification.permission==="granted"){
-    new Notification("⏰ Task Reminder",{body:task});
+    new Notification("⏰ Task Reminder",{body:name});
   }
 }
 
@@ -141,6 +240,7 @@ if("Notification"in window){
 if("serviceWorker"in navigator){
   navigator.serviceWorker.register("sw.js");
 }
+
 </script>
 
 </body>
