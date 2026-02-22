@@ -1,33 +1,27 @@
-const CACHE="routine-v1";
-
-const FILES=[
-  "./",
-  "./index.html",
-  "./alarm.mp3",
-  "./manifest.json",
-  "./icon.png"
+const CACHE_NAME = "routine-cache-v1";
+const urlsToCache = [
+  "/routineapp/",
+  "/routineapp/index.html",
+  "/routineapp/manifest.json"
 ];
 
-self.addEventListener("install",e=>{
-  e.waitUntil(
-    caches.open(CACHE).then(c=>c.addAll(FILES))
+self.addEventListener("install", event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
-self.addEventListener("activate",e=>{
-  e.waitUntil(
-    caches.keys().then(keys=>{
-      return Promise.all(
-        keys.map(k=>{
-          if(k!==CACHE) return caches.delete(k);
-        })
-      );
-    })
+self.addEventListener("fetch", event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
   );
 });
 
-self.addEventListener("fetch",e=>{
-  e.respondWith(
-    caches.match(e.request).then(r=>r||fetch(e.request))
+self.addEventListener("notificationclick", function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow("/routineapp/")
   );
 });
