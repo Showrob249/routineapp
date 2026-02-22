@@ -3,209 +3,139 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔥 My Daily Routine</title>
+<title>🔥 My Routine</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
 
 <style>
-body {
-  margin: 0;
-  background: #000;
-  font-family: Arial, sans-serif;
-  color: white;
-  text-align: center;
+body{
+  margin:0;
+  background:#000;
+  color:#fff;
+  font-family:Arial;
+  text-align:center;
 }
 
-h1 {
-  margin-top: 40px;
-  color: #00ffcc;
+h1{
+  margin-top:40px;
+  color:#00ffcc;
 }
 
-.container {
-  margin-top: 30px;
+input,button{
+  padding:10px;
+  margin:5px;
+  font-size:16px;
 }
 
-input, button {
-  padding: 10px;
-  margin: 5px;
-  font-size: 16px;
+button{
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  background:#00ffcc;
 }
 
-button {
-  cursor: pointer;
-  border: none;
-  border-radius: 6px;
+.task{
+  background:#111;
+  margin:15px auto;
+  padding:15px;
+  width:90%;
+  max-width:400px;
+  border-radius:10px;
+  transition:0.3s;
 }
 
-.add-btn {
-  background: #00ffcc;
+.active{
+  box-shadow:0 0 20px red;
 }
 
-.complete-btn {
-  background: #28a745;
-  color: white;
+.completed{
+  background:green;
 }
 
-.task-card {
-  background: #111;
-  margin: 15px auto;
-  padding: 15px;
-  width: 90%;
-  max-width: 400px;
-  border-radius: 10px;
-  transition: 0.3s;
+/* RED ALERT */
+@keyframes flash{
+  0%{background:black;}
+  50%{background:darkred;}
+  100%{background:black;}
 }
 
-.active-task {
-  box-shadow: 0 0 20px #00ffcc;
-}
-
-.completed {
-  background: #145214 !important;
-  transition: 0.5s;
-}
-
-/* 🔥 Red Flash */
-@keyframes redFlash {
-  0% { background: black; }
-  50% { background: darkred; }
-  100% { background: black; }
-}
-
-.red-alert {
-  animation: redFlash 1s infinite;
-}
-
-/* 🔥 Shake */
-@keyframes shake {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(-5px, 5px); }
-  50% { transform: translate(5px, -5px); }
-  75% { transform: translate(-5px, 5px); }
-  100% { transform: translate(0, 0); }
-}
-
-.shake {
-  animation: shake 0.5s infinite;
-}
-
-/* 🔥 Full Overlay */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(139,0,0,0.95);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 50px;
-  font-weight: bold;
-  z-index: 9999;
+.alert{
+  animation:flash 1s infinite;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🔥 My Daily Routine</h1>
+<h1>🔥 My Routine</h1>
 
-<div class="container">
-  <input type="text" id="taskName" placeholder="Task Name">
-  <input type="time" id="taskTime">
-  <button class="add-btn" onclick="addTask()">Add Task</button>
-</div>
+<input type="text" id="taskName" placeholder="Task Name">
+<input type="time" id="taskTime">
+<button onclick="addTask()">Add</button>
 
-<div id="taskList"></div>
+<div id="list"></div>
 
 <audio id="alarm" loop>
-  <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
+  <source src="alarm.mp3" type="audio/mpeg">
 </audio>
 
 <script>
-let tasks = [];
+let tasks=[];
 
-function addTask() {
-  let name = document.getElementById("taskName").value;
-  let time = document.getElementById("taskTime").value;
+function addTask(){
+  let name=document.getElementById("taskName").value;
+  let time=document.getElementById("taskTime").value;
+  if(!name||!time) return alert("Enter task & time");
 
-  if (!name || !time) return alert("Enter task & time");
-
-  let task = { id: Date.now(), name, time, completed: false };
-  tasks.push(task);
-  renderTasks();
-
-  document.getElementById("taskName").value = "";
-  document.getElementById("taskTime").value = "";
+  tasks.push({id:Date.now(),name,time,done:false});
+  render();
 }
 
-function renderTasks() {
-  let list = document.getElementById("taskList");
-  list.innerHTML = "";
-
-  tasks.forEach(task => {
-    let div = document.createElement("div");
-    div.className = "task-card";
-    div.id = "task-" + task.id;
-
-    div.innerHTML = `
-      <h3>${task.name}</h3>
-      <p>${task.time}</p>
-      <button class="complete-btn" onclick="completeTask(${task.id})">
-        Completed
-      </button>
+function render(){
+  let list=document.getElementById("list");
+  list.innerHTML="";
+  tasks.forEach(t=>{
+    let div=document.createElement("div");
+    div.className="task";
+    div.id="task-"+t.id;
+    div.innerHTML=`
+      <h3>${t.name}</h3>
+      <p>${t.time}</p>
+      <button onclick="complete(${t.id})">Completed</button>
     `;
-
     list.appendChild(div);
   });
 }
 
-function completeTask(id) {
-  let task = tasks.find(t => t.id === id);
-  task.completed = true;
+function complete(id){
+  let t=tasks.find(x=>x.id===id);
+  t.done=true;
 
   document.getElementById("alarm").pause();
-  document.getElementById("alarm").currentTime = 0;
+  document.getElementById("alarm").currentTime=0;
+  document.body.classList.remove("alert");
 
-  document.body.classList.remove("red-alert");
-  document.body.classList.remove("shake");
-
-  let overlay = document.getElementById("overlay");
-  if (overlay) overlay.remove();
-
-  let card = document.getElementById("task-" + id);
-  card.classList.add("completed");
+  document.getElementById("task-"+id).classList.add("completed");
 }
 
-function checkTime() {
-  let now = new Date();
-  let current = now.toTimeString().slice(0,5);
-
-  tasks.forEach(task => {
-    if (task.time === current && !task.completed) {
-      triggerAlarm(task.id);
+function check(){
+  let now=new Date().toTimeString().slice(0,5);
+  tasks.forEach(t=>{
+    if(t.time===now && !t.done){
+      document.getElementById("alarm").play();
+      document.body.classList.add("alert");
+      document.getElementById("task-"+t.id).classList.add("active");
     }
   });
 }
 
-function triggerAlarm(id) {
-  document.getElementById("alarm").play();
+setInterval(check,1000);
 
-  document.body.classList.add("red-alert");
-  document.body.classList.add("shake");
-
-  let card = document.getElementById("task-" + id);
-  card.classList.add("active-task");
-
-  if (!document.getElementById("overlay")) {
-    let overlay = document.createElement("div");
-    overlay.className = "overlay";
-    overlay.id = "overlay";
-    overlay.innerHTML = "🚨 WAKE UP 🚨";
-    document.body.appendChild(overlay);
-  }
+/* Service Worker Register */
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js");
 }
-
-setInterval(checkTime, 1000);
 </script>
 
 </body>
@@ -214,6 +144,7 @@ setInterval(checkTime, 1000);
 
 
  
+
 
 
 
