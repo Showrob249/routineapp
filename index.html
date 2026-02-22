@@ -107,87 +107,120 @@ button{
 
 </div>
 
-<audio id="alarmSound" src="alarm.mp3" loop></audio>
+
 
 <script>
 
-let tasks=[];
-let deferredPrompt;
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-const installBtn=document.getElementById("installBtn");
-
-window.addEventListener("beforeinstallprompt",(e)=>{
-  e.preventDefault();
-  deferredPrompt=e;
-  installBtn.style.display="inline-block";
-});
-
-installBtn.onclick=async()=>{
-  installBtn.style.display="none";
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt=null;
-};
-
-function addTask(){
-  document.getElementById("alarmSound").play().then(a=>a.pause());
-  const name=document.getElementById("taskName").value;
-  const time=document.getElementById("taskTime").value;
-
-  if(!name||!time){alert("Enter task & time");return;}
-
-  const task={
-    id:Date.now(),
-    name:name,
-    time:time,
-    completed:false
-  };
-
-  tasks.push(task);
-  renderTasks();
-  scheduleAlarm(task);
+function saveTasks(){
+  localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
 function renderTasks(){
-  const list=document.getElementById("taskList");
-  list.innerHTML="";
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
 
-  tasks.forEach(task=>{
-    const div=document.createElement("div");
-    div.className="task";
-    if(task.completed) div.classList.add("green");
-    if(task.alarm) div.classList.add("red");
+  tasks.forEach((task,index)=>{
+    const li = document.createElement("li");
 
-    div.innerHTML=`
-      <b>${task.name}</b><br>
-      ⏰ ${task.time}<br><br>
-      <button class="completeBtn" onclick="completeTask(${task.id})">Complete</button>
-      <button class="deleteBtn" onclick="deleteTask(${task.id})">Delete</button>
+    li.className = task.completed ? "completed" : 
+                   task.alarm ? "alarm" : "";
+
+    li.innerHTML = `
+      <div>
+        <strong>${task.name}</strong><br>
+        ⏰ ${task.time}
+      </div>
+      <div>
+        <button onclick="completeTask(${index})">✔</button>
+        <button onclick="deleteTask(${index})">🗑</button>
+      </div>
     `;
 
-    list.appendChild(div);
+    list.appendChild(li);
   });
 
   updateProgress();
 }
 
-function deleteTask(id){
-  tasks=tasks.filter(t=>t.id!==id);
-  updateProgress();
+function addTask(){
+  const name = document.getElementById("taskName").value;
+  const time = document.getElementById("taskTime").value;
+
+  if(!name || !time){
+    alert("Enter task & time");
+    return;
+  }
+
+  const task = {
+    name,
+    time,
+    completed:false,
+    alarm:false
+  };
+
+  tasks.push(task);
+  saveTasks();
+  scheduleAlarm(task);
+  renderTasks();
+
+  document.getElementById("taskName").value="";
+}
+
+function deleteTask(index){
+  tasks.splice(index,1);
+  saveTasks();
   renderTasks();
 }
 
-function completeTask(id){
-  const task=tasks.find(t=>t.id===id);
-  if(task){
-    task.completed=true;
-    task.alarm=false;
-    stopAlarm();
-  }
+function completeTask(index){
+  tasks[index].completed = true;
+  tasks[index].alarm = false;
+  stopAlarm();
+  saveTasks();
   renderTasks();
+}
+
+function updateProgress(){
+  const total = tasks.length;
+  const done = tasks.filter(t=>t.completed).length;
+  const percent = total ? Math.round((done/total)*100) : 0;
+
+  document.getElementById("progressBar").style.width = percent+"%";
+  document.getElementById("percentText").innerText = percent+"%";
+}
+
+/* 🔥 PURE JAVASCRIPT ALARM (NO MP3) */
+
+let alarmInterval = null;
+let audioContext = null;
+
+function startAlarm(){
+
+  if(alarmInterval) return;
+
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+  alarmInterval = setInterval(()=>{
+    const oscillator = audioContext.createOscillator();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+    oscillator.connect(audioContext.destination);
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.5);
+  },800);
+}
+
+function stopAlarm(){
+  if(alarmInterval){
+    clearInterval(alarmInterval);
+    alarmInterval = null;
+  }
 }
 
 function scheduleAlarm(task){
+
   const now = new Date();
   const alarmTime = new Date();
   const [h,m] = task.time.split(":");
@@ -199,63 +232,42 @@ function scheduleAlarm(task){
   const diff = alarmTime - now;
 
   if(diff > 0){
-    setTimeout(() => {
+    setTimeout(()=>{
 
-      task.alarm = true;
-      renderTasks();
+      if(!task.completed){
 
-      const alarm = document.getElementById("alarmSound");
+        task.alarm = true;
+        renderTasks();
+        startAlarm();
 
-      // force play with user gesture workaround
-      alarm.play().then(() => {
-        console.log("Alarm playing");
-      }).catch(err => {
-        console.log("Autoplay blocked, waiting for user click");
+        showNotification(task.name);
 
-        document.body.addEventListener("click", () => {
-          alarm.play();
-        }, { once: true });
-      });
-
-      showNotification(task.name);
+      }
 
     }, diff);
   }
 }
 
-function stopAlarm(){
-  const alarm=document.getElementById("alarmSound");
-  alarm.pause();
-  alarm.currentTime=0;
-}
+/* 🔔 Notification */
 
-function updateProgress(){
-  if(tasks.length===0){
-    document.getElementById("progress").style.width="0%";
-    document.getElementById("percentText").innerText="0% Completed";
-    return;
-  }
-
-  const completed=tasks.filter(t=>t.completed).length;
-  const percent=Math.round((completed/tasks.length)*100);
-
-  document.getElementById("progress").style.width=percent+"%";
-  document.getElementById("percentText").innerText=percent+"% Completed";
-}
-
-function showNotification(name){
-  if(Notification.permission==="granted"){
-    new Notification("⏰ Task Reminder",{body:name});
+function requestNotification(){
+  if("Notification" in window){
+    Notification.requestPermission();
   }
 }
 
-if("Notification"in window){
-  Notification.requestPermission();
+function showNotification(taskName){
+  if(Notification.permission === "granted"){
+    new Notification("⏰ Task Reminder!", {
+      body: taskName
+    });
+  }
 }
 
-if("serviceWorker"in navigator){
-  navigator.serviceWorker.register("sw.js");
-}
+/* INIT */
+
+renderTasks();
+requestNotification();
 
 </script>
 
