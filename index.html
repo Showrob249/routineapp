@@ -2,19 +2,68 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Red Alert Test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔥 My Daily Routine</title>
 
 <style>
 body {
   margin: 0;
-  background: black;
+  background: #000;
+  font-family: Arial, sans-serif;
   color: white;
-  font-family: Arial;
   text-align: center;
-  padding-top: 100px;
 }
 
-/* 🔥 Red Flash Animation */
+h1 {
+  margin-top: 40px;
+  color: #00ffcc;
+}
+
+.container {
+  margin-top: 30px;
+}
+
+input, button {
+  padding: 10px;
+  margin: 5px;
+  font-size: 16px;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+}
+
+.add-btn {
+  background: #00ffcc;
+}
+
+.complete-btn {
+  background: #28a745;
+  color: white;
+}
+
+.task-card {
+  background: #111;
+  margin: 15px auto;
+  padding: 15px;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+.active-task {
+  box-shadow: 0 0 20px #00ffcc;
+}
+
+.completed {
+  background: #145214 !important;
+  transition: 0.5s;
+}
+
+/* 🔥 Red Flash */
 @keyframes redFlash {
   0% { background: black; }
   50% { background: darkred; }
@@ -25,8 +74,21 @@ body {
   animation: redFlash 1s infinite;
 }
 
-/* 🔥 Overlay */
-.alert-overlay {
+/* 🔥 Shake */
+@keyframes shake {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-5px, 5px); }
+  50% { transform: translate(5px, -5px); }
+  75% { transform: translate(-5px, 5px); }
+  100% { transform: translate(0, 0); }
+}
+
+.shake {
+  animation: shake 0.5s infinite;
+}
+
+/* 🔥 Full Overlay */
+.overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -36,54 +98,114 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 60px;
+  font-size: 50px;
   font-weight: bold;
   z-index: 9999;
-}
-
-button {
-  padding: 15px 30px;
-  font-size: 18px;
-  margin: 10px;
-  cursor: pointer;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🔥 Red Alert Demo</h1>
+<h1>🔥 My Daily Routine</h1>
 
-<button onclick="startAlert()">Start Alarm</button>
-<button onclick="stopAlert()">Completed</button>
+<div class="container">
+  <input type="text" id="taskName" placeholder="Task Name">
+  <input type="time" id="taskTime">
+  <button class="add-btn" onclick="addTask()">Add Task</button>
+</div>
+
+<div id="taskList"></div>
 
 <audio id="alarm" loop>
   <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
 </audio>
 
 <script>
-function startAlert() {
-  document.getElementById("alarm").play();
-  document.body.classList.add("red-alert");
+let tasks = [];
 
-  let overlay = document.createElement("div");
-  overlay.className = "alert-overlay";
-  overlay.id = "alertBox";
-  overlay.innerHTML = "🚨 WAKE UP 🚨";
+function addTask() {
+  let name = document.getElementById("taskName").value;
+  let time = document.getElementById("taskTime").value;
 
-  document.body.appendChild(overlay);
+  if (!name || !time) return alert("Enter task & time");
+
+  let task = { id: Date.now(), name, time, completed: false };
+  tasks.push(task);
+  renderTasks();
+
+  document.getElementById("taskName").value = "";
+  document.getElementById("taskTime").value = "";
 }
 
-function stopAlert() {
-  let alarm = document.getElementById("alarm");
-  alarm.pause();
-  alarm.currentTime = 0;
+function renderTasks() {
+  let list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  tasks.forEach(task => {
+    let div = document.createElement("div");
+    div.className = "task-card";
+    div.id = "task-" + task.id;
+
+    div.innerHTML = `
+      <h3>${task.name}</h3>
+      <p>${task.time}</p>
+      <button class="complete-btn" onclick="completeTask(${task.id})">
+        Completed
+      </button>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+function completeTask(id) {
+  let task = tasks.find(t => t.id === id);
+  task.completed = true;
+
+  document.getElementById("alarm").pause();
+  document.getElementById("alarm").currentTime = 0;
 
   document.body.classList.remove("red-alert");
+  document.body.classList.remove("shake");
 
-  let overlay = document.getElementById("alertBox");
+  let overlay = document.getElementById("overlay");
   if (overlay) overlay.remove();
+
+  let card = document.getElementById("task-" + id);
+  card.classList.add("completed");
 }
+
+function checkTime() {
+  let now = new Date();
+  let current = now.toTimeString().slice(0,5);
+
+  tasks.forEach(task => {
+    if (task.time === current && !task.completed) {
+      triggerAlarm(task.id);
+    }
+  });
+}
+
+function triggerAlarm(id) {
+  document.getElementById("alarm").play();
+
+  document.body.classList.add("red-alert");
+  document.body.classList.add("shake");
+
+  let card = document.getElementById("task-" + id);
+  card.classList.add("active-task");
+
+  if (!document.getElementById("overlay")) {
+    let overlay = document.createElement("div");
+    overlay.className = "overlay";
+    overlay.id = "overlay";
+    overlay.innerHTML = "🚨 WAKE UP 🚨";
+    document.body.appendChild(overlay);
+  }
+}
+
+setInterval(checkTime, 1000);
 </script>
 
 </body>
@@ -92,6 +214,7 @@ function stopAlert() {
 
 
  
+
 
 
 
